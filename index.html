@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Team Arena | Socket.io Host & Player Multiplayer</title>
+    <meta name="description" content="Browser-based worldwide multiplayer team game with Host and Player screens, instant Socket.io WebSocket connections, and Quick Addition speed rounds.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- QRCode JS Library CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Socket.io Library Served Automatically by Node.js Server -->
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <!-- Background Animated Canvas Grid -->
+    <canvas id="bg-canvas"></canvas>
+
+    <div id="app" class="app-container">
+
+        <!-- HEADER BAR -->
+        <header class="main-header">
+            <div class="logo-group">
+                <span class="logo-icon">✨</span>
+                <div>
+                    <h1 class="logo-title">COSMIC <span class="highlight">TEAM ARENA</span></h1>
+                    <p class="logo-subtitle" id="header-mode-subtitle">Real-Time Socket.io Remote Arena</p>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <div id="room-info-badge" class="room-info-badge hidden">
+                    <span class="badge-label">ROOM CODE</span>
+                    <span id="room-code-display" class="badge-code">8472</span>
+                    <button id="show-qr-btn" class="icon-btn small-btn" title="Show QR Code">📱 QR</button>
+                </div>
+
+                <button id="sound-toggle-btn" class="icon-btn" title="Toggle Sound">
+                    <span id="sound-icon">🔊</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN VIEW CONTAINER -->
+        <main id="main-view" class="main-content">
+            
+            <!-- VIEW 1: ROLE SELECTOR / INITIALIZER -->
+            <div id="role-selector-view" class="view-card">
+                <h2>WELCOME TO COSMIC ARENA</h2>
+                <p>Choose your mode to begin:</p>
+                <div class="role-buttons-grid">
+                    <button id="select-host-btn" onclick="if(window.appController){window.appController.setMode('host');}else{new AppController().setMode('host');}" class="role-btn primary-role">
+                        <span class="role-icon">🖥️</span>
+                        <span class="role-title">HOST GAME</span>
+                        <span class="role-desc">Display on main screen / projector for all players</span>
+                    </button>
+                    <button id="select-player-btn" onclick="if(window.appController){window.appController.setMode('player');}else{new AppController().setMode('player');}" class="role-btn secondary-role">
+                        <span class="role-icon">📱</span>
+                        <span class="role-title">JOIN AS PLAYER</span>
+                        <span class="role-desc">Connect from your phone or laptop anywhere in the world</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- VIEW 2: HOST DASHBOARD VIEW -->
+            <div id="host-view" class="view-card hidden">
+                <!-- Host Navigation Tabs -->
+                <nav class="host-tabs">
+                    <button class="host-tab active" data-tab="lobby">1. Lobby & Players</button>
+                    <button class="host-tab" data-tab="game1">2. Game 1: Quick Addition</button>
+                    <button class="host-tab" data-tab="standings">3. Team Standings</button>
+                </nav>
+
+                <!-- TAB A: LOBBY & PLAYER MANAGEMENT -->
+                <div id="host-tab-lobby" class="host-tab-panel active">
+                    <div class="lobby-grid">
+                        <!-- Left: QR Code & Worldwide Join Info -->
+                        <div class="lobby-card qr-card-panel">
+                            <div class="worldwide-badge">⚡ INSTANT SOCKET.IO WEBSOCKETS ACTIVE</div>
+                            <h3>📱 SCAN TO JOIN FROM ANY COUNTRY</h3>
+                            <div id="lobby-qrcode" class="qr-code-box"></div>
+
+                            <div class="join-link-box">
+                                <input type="text" id="host-join-link" readonly value="https://kamden-unfiltered-hopingly.ngrok-free.dev">
+                                <button id="copy-join-link-btn" class="secondary-btn">Copy Link</button>
+                            </div>
+                            <p class="qr-instructions">Players anywhere in the world scan QR or open the link to join instantly!</p>
+                        </div>
+
+                        <!-- Right: Teams & Connected Players List -->
+                        <div class="lobby-card roster-panel">
+                            <div class="roster-header">
+                                <h3>👥 CONNECTED PLAYERS (<span id="total-player-count">0</span>)</h3>
+                                <button id="add-team-btn" class="secondary-btn small-btn">+ Add Team</button>
+                            </div>
+
+                            <div id="teams-roster-grid" class="teams-roster-grid">
+                                <!-- Dynamic Team Cards Rendered Here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lobby-footer-actions">
+                        <button id="start-game1-lobby-btn" class="primary-btn pulse-anim">▶ START GAME 1: QUICK ADDITION</button>
+                    </div>
+                </div>
+
+                <!-- TAB B: GAME 1 — QUICK ADDITION ARENA -->
+                <div id="host-tab-game1" class="host-tab-panel">
+                    <div class="game1-arena">
+                        <div class="stage-header">
+                            <div class="round-badge">ROUND <span id="current-round-num">1</span></div>
+                            <h2>GAME 1: QUICK ADDITION</h2>
+                            <p>Pick one player per team → Players submit secret 2-digit numbers → Everyone races to calculate the total sum!</p>
+                        </div>
+
+                        <!-- GAME 1 STATE 1: PLAYER SELECTION PHASE -->
+                        <div id="g1-phase-select" class="stage-card">
+                            <h3>STEP 1: SELECT 1 PLAYER FROM EACH TEAM</h3>
+                            <div id="team-selection-grid" class="team-selection-grid">
+                                <!-- Select dropdowns per team rendered dynamically -->
+                            </div>
+                            <button id="start-number-phase-btn" class="primary-btn margin-top">⏱ START 5-SECOND NUMBER INPUT PHASE</button>
+                        </div>
+
+                        <!-- GAME 1 STATE 2: 5-SECOND NUMBER INPUT PHASE -->
+                        <div id="g1-phase-timer" class="stage-card hidden">
+                            <h3>STEP 2: PLAYERS ENTERING 2-DIGIT NUMBERS...</h3>
+                            
+                            <div class="timer-display-box">
+                                <div id="input-timer-ring" class="timer-ring">
+                                    <span id="input-timer-val" class="timer-num">5</span>
+                                </div>
+                            </div>
+
+                            <div id="player-submission-status" class="status-grid">
+                                <!-- Status for each selected player rendered here -->
+                            </div>
+
+                            <button id="force-reveal-btn" class="secondary-btn margin-top">👁 Reveal Numbers Now</button>
+                        </div>
+
+                        <!-- GAME 1 STATE 3: NUMBER REVEAL & SUM CALCULATION -->
+                        <div id="g1-phase-reveal" class="stage-card hidden">
+                            <h3>STEP 3: NUMBERS REVEALED!</h3>
+                            
+                            <div id="revealed-numbers-container" class="revealed-numbers-grid">
+                                <!-- Cards showing each player's number -->
+                            </div>
+
+                            <div class="math-target-card">
+                                <span>TOTAL SUM TO CALCULATE:</span>
+                                <div id="math-sum-formula" class="math-formula">? + ? + ? = ?</div>
+                            </div>
+
+                            <button id="start-speed-race-btn" class="primary-btn margin-top pulse-anim">⚡ START SPEED ANSWER RACE!</button>
+                        </div>
+
+                        <!-- GAME 1 STATE 4: SPEED ANSWER RACE & WINNER ANNOUNCEMENT -->
+                        <div id="g1-phase-race" class="stage-card hidden">
+                            <h3>STEP 4: SPEED ANSWER RACE IN PROGRESS!</h3>
+                            <p>Players are submitting the total sum on their screens now...</p>
+
+                            <div id="race-live-status" class="race-live-box">
+                                <div class="math-formula-active" id="active-formula-display">112</div>
+                                <div id="race-submissions-log" class="submissions-log">
+                                    <p class="waiting-text">Awaiting first correct submission...</p>
+                                </div>
+                            </div>
+
+                            <div id="round-winner-card" class="winner-card hidden">
+                                <h2>🎉 ROUND WINNER! 🎉</h2>
+                                <div id="winner-name-text" class="winner-name">Alex (Team A)</div>
+                                <div class="winner-points">+1 POINT AWARDED!</div>
+                            </div>
+
+                            <button id="next-round-btn" class="primary-btn margin-top hidden">NEXT ROUND ➔</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB C: TEAM STANDINGS & SCOREBOARD -->
+                <div id="host-tab-standings" class="host-tab-panel">
+                    <div class="standings-wrapper">
+                        <h2>🏆 OVERALL LEADERBOARD</h2>
+                        <div id="standings-teams-grid" class="standings-teams-grid">
+                            <!-- Team standings cards -->
+                        </div>
+
+                        <div class="player-leaderboard-card">
+                            <h3>⭐ TOP INDIVIDUAL PLAYERS</h3>
+                            <ul id="individual-leaderboard-list" class="leaderboard-list"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: PLAYER SCREEN VIEW -->
+            <div id="player-view" class="view-card hidden">
+                
+                <!-- PLAYER JOIN FORM -->
+                <div id="player-join-panel" class="player-panel">
+                    <div class="player-card">
+                        <h2>📱 JOIN GAME ARENA</h2>
+                        <div class="form-group">
+                            <label for="player-name-field">Your Name:</label>
+                            <input type="text" id="player-name-field" placeholder="e.g. Sarah" maxlength="15">
+                        </div>
+                        <div class="form-group">
+                            <label for="player-team-dropdown">Select Your Team:</label>
+                            <select id="player-team-dropdown">
+                                <option value="team_a">Team A</option>
+                                <option value="team_b">Team B</option>
+                                <option value="team_c">Team C</option>
+                            </select>
+                        </div>
+                        <button id="submit-player-join-btn" class="primary-btn">JOIN GAME ➔</button>
+                    </div>
+                </div>
+
+                <!-- PLAYER ACTIVE LOBBY / GAME SCREEN -->
+                <div id="player-active-panel" class="player-panel hidden">
+                    <div class="player-info-bar">
+                        <div class="player-profile">
+                            <span id="p-team-dot" class="p-dot"></span>
+                            <div>
+                                <div id="p-display-name" class="p-name">Player</div>
+                                <div id="p-display-team" class="p-team">Team A</div>
+                            </div>
+                        </div>
+                        <div class="p-score-box">
+                            <span class="p-score-label">PTS</span>
+                            <span id="p-display-score" class="p-score-val">0</span>
+                        </div>
+                    </div>
+
+                    <!-- PLAYER STATE A: WAITING IN LOBBY -->
+                    <div id="p-state-waiting" class="player-state-card">
+                        <div class="waiting-icon">⌛</div>
+                        <h3>YOU ARE IN THE LOBBY!</h3>
+                        <p id="p-waiting-msg">Waiting for Host to start the round...</p>
+                    </div>
+
+                    <!-- PLAYER STATE B: 2-DIGIT NUMBER ENTRY PROMPT -->
+                    <div id="p-state-number-input" class="player-state-card hidden">
+                        <div class="action-header">
+                            <span class="action-icon">🔢</span>
+                            <h3>YOU ARE SELECTED!</h3>
+                            <p>Enter a <strong>2-Digit Number</strong> (10-99):</p>
+                        </div>
+
+                        <div class="player-number-form">
+                            <input type="number" id="p-two-digit-input" min="10" max="99" placeholder="e.g. 24" autofocus>
+                            <button id="p-submit-number-btn" class="primary-btn">SUBMIT NUMBER</button>
+                        </div>
+
+                        <div id="p-number-timer" class="p-timer-badge">Time Left: <span id="p-timer-val">5</span>s</div>
+                    </div>
+
+                    <!-- PLAYER STATE C: SPEED ANSWER INPUT PROMPT -->
+                    <div id="p-state-speed-race" class="player-state-card hidden">
+                        <div class="action-header">
+                            <span class="action-icon">⚡</span>
+                            <h3>SPEED ADD RACE!</h3>
+                            <p id="p-race-prompt">Calculate total sum & submit first!</p>
+                        </div>
+
+                        <div class="player-race-form">
+                            <input type="number" id="p-sum-answer-input" placeholder="Total Sum..." autofocus>
+                            <button id="p-submit-answer-btn" class="primary-btn">SUBMIT ANSWER ⚡</button>
+                        </div>
+                    </div>
+
+                    <!-- PLAYER STATE D: RESULT FEEDBACK -->
+                    <div id="p-state-result" class="player-state-card hidden">
+                        <div id="p-result-icon" class="result-icon">🎉</div>
+                        <h3 id="p-result-title">ROUND COMPLETED!</h3>
+                        <p id="p-result-desc">Winner: Alex (+1 PT)</p>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="main-footer">
+            <p>Cosmic Team Arena • Real-Time Socket.io Engine • 2026</p>
+        </footer>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- SCRIPTS -->
+    <script src="js/audio.js"></script>
+    <script src="js/client.js"></script>
+    <script src="js/gameEngine.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
