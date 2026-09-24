@@ -12,7 +12,8 @@
     <link rel="stylesheet" href="style.css">
     <!-- QRCode JS Library CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <!-- Socket.io Library Served Automatically by Node.js Server -->
+    <!-- Socket.io Client CDN (Guarantees window.io is always available) -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
@@ -52,12 +53,12 @@
                 <h2>WELCOME TO COSMIC ARENA</h2>
                 <p>Choose your mode to begin:</p>
                 <div class="role-buttons-grid">
-                    <button id="select-host-btn" onclick="if(window.appController){window.appController.setMode('host');}else{new AppController().setMode('host');}" class="role-btn primary-role">
+                    <button id="select-host-btn" class="role-btn primary-role">
                         <span class="role-icon">🖥️</span>
                         <span class="role-title">HOST GAME</span>
                         <span class="role-desc">Display on main screen / projector for all players</span>
                     </button>
-                    <button id="select-player-btn" onclick="if(window.appController){window.appController.setMode('player');}else{new AppController().setMode('player');}" class="role-btn secondary-role">
+                    <button id="select-player-btn" class="role-btn secondary-role">
                         <span class="role-icon">📱</span>
                         <span class="role-title">JOIN AS PLAYER</span>
                         <span class="role-desc">Connect from your phone or laptop anywhere in the world</span>
